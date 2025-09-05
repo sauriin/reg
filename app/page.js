@@ -148,8 +148,8 @@ export default function LandingPage() {
             transition={{ delay: 1.2, duration: 1 }}
             className="mt-10"
           >
-            <Link href="/registration">
-              <button className="px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-indigo-500 to-cyan-600 text-white text-lg sm:text-xl font-semibold rounded-2xl shadow-lg hover:from-indigo-400 hover:to-cyan-500 hover:shadow-[0_0_25px_rgba(120,200,255,0.9)] transition-all">
+            <Link href="/register">
+              <button onClick={() => { window.localStorage.removeItem("Details") }} className="px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-indigo-500 to-cyan-600 text-white text-lg sm:text-xl font-semibold rounded-2xl shadow-lg hover:from-indigo-400 hover:to-cyan-500 hover:shadow-[0_0_25px_rgba(120,200,255,0.9)] transition-all">
                 Register Now
               </button>
             </Link>

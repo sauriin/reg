@@ -7,8 +7,8 @@ import { Cinzel } from "next/font/google";
 import Link from "next/link";
 import RetreatHeader from "../components/retreatHeader";
 import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import toast, { Toaster } from "react-hot-toast";
+import { api } from "@/convex/_generated/api";
 
 const cinzel = Cinzel({ subsets: ["latin"], weight: ["400", "600", "700"] });
 
