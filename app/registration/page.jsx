@@ -6,42 +6,41 @@ import { motion } from "framer-motion";
 import { Cinzel } from "next/font/google";
 import Link from "next/link";
 import RetreatHeader from "../components/retreatHeader";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import toast, { Toaster } from "react-hot-toast";
 
 const cinzel = Cinzel({ subsets: ["latin"], weight: ["400", "600", "700"] });
 
-export default function RegistrationPage() {
-    const [formData, setFormData] = useState({
-        name: "",
-        gender: "",
-        dob: "",
-        phone: "",
-        email: "",
-        address: "",
-        parish: "",
-        occupation: "",
-        paymentMode: [],
-        emergencyName: "",
-        emergencyPhone: "",
-    });
+const initialFormState = {
+    name: "",
+    gender: "",
+    dob: "",
+    phone: "",
+    email: "",
+    address: "",
+    parish: "",
+    occupation: "",
+    paymentMode: "",
+    emergencyName: "",
+    emergencyPhone: "",
+};
 
+export default function RegistrationPage() {
+    const createRegistration = useMutation(api.registration.create);
+    const [formData, setFormData] = useState(initialFormState);
     const [errors, setErrors] = useState({});
 
+    // Handle input change
     const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        if (type === "checkbox") {
-            setFormData((prev) => {
-                const updated = checked
-                    ? [...prev.paymentMode, value]
-                    : prev.paymentMode.filter((mode) => mode !== value);
-                return { ...prev, paymentMode: updated };
-            });
-        } else {
-            setFormData({ ...formData, [name]: value });
-        }
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
+    // Validate inputs
     const validate = () => {
         const newErrors = {};
+
         if (!formData.name.trim()) newErrors.name = "Name is required.";
         if (!formData.gender) newErrors.gender = "Gender is required.";
 
@@ -49,11 +48,10 @@ export default function RegistrationPage() {
             newErrors.dob = "Date of birth is required.";
         } else {
             const dob = new Date(formData.dob);
-            const ageDiff = new Date().getFullYear() - dob.getFullYear();
-            const monthDiff = new Date().getMonth() - dob.getMonth();
-            const dayDiff = new Date().getDate() - dob.getDate();
-            let age = ageDiff;
-            if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) age--;
+            const today = new Date();
+            let age = today.getFullYear() - dob.getFullYear();
+            const m = today.getMonth() - dob.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
             if (age < 16) newErrors.dob = "You must be at least 16 years old.";
         }
 
@@ -61,11 +59,18 @@ export default function RegistrationPage() {
         if (!phoneRegex.test(formData.phone)) {
             newErrors.phone = "Enter a valid 10-digit WhatsApp number.";
         }
+
+        if (!formData.emergencyName.trim()) {
+            newErrors.emergencyName = "Emergency contact name is required.";
+        } else if (!/^[A-Za-z\s]+$/.test(formData.emergencyName)) {
+            newErrors.emergencyName = "Name must contain only letters.";
+        }
+
         if (!phoneRegex.test(formData.emergencyPhone)) {
             newErrors.emergencyPhone = "Enter a valid 10-digit emergency number.";
         }
 
-        if (formData.phone === formData.emergencyPhone && formData.phone) {
+        if (formData.phone && formData.phone === formData.emergencyPhone) {
             newErrors.emergencyPhone =
                 "Emergency number cannot be same as WhatsApp number.";
         }
@@ -77,27 +82,33 @@ export default function RegistrationPage() {
 
         if (!formData.parish.trim()) newErrors.parish = "Parish is required.";
         if (!formData.occupation) newErrors.occupation = "Occupation is required.";
-        if (!formData.paymentMode.length)
-            newErrors.paymentMode = "Select at least one payment mode.";
-        if (!formData.emergencyName.trim())
-            newErrors.emergencyName = "Emergency contact name is required.";
+        if (!formData.paymentMode) newErrors.paymentMode = "Select a payment mode.";
 
         return newErrors;
     };
 
-    const handleSubmit = (e) => {
+    // Submit form
+    const handleSubmit = async (e) => {
         e.preventDefault();
         const validationErrors = validate();
-        if (Object.keys(validationErrors).length) {
-            setErrors(validationErrors);
+        setErrors(validationErrors);
+
+        if (Object.keys(validationErrors).length > 0) {
+            toast.error("⚠️ Please fix the errors before submitting.");
             return;
         }
-        setErrors({});
-        console.log("Form Submitted:", formData);
-        alert("Form submitted successfully!");
+
+        try {
+            await createRegistration(formData);
+            toast.success("✅ Registration submitted successfully!");
+            setFormData(initialFormState);
+        } catch (err) {
+            console.error(err);
+            toast.error("❌ Something went wrong. Try again.");
+        }
     };
 
-    // ✅ Updated: all inputs/textareas are white with black text
+    // Styles
     const inputClass =
         "w-full p-4 border rounded-xl bg-white text-black focus:outline-none focus:ring-2 focus:ring-cyan-500 transition placeholder-gray-400";
 
@@ -109,6 +120,9 @@ export default function RegistrationPage() {
 
     return (
         <main className="relative min-h-screen overflow-hidden">
+            {/* Toast Container */}
+            <Toaster position="top-right" reverseOrder={false} />
+
             {/* Background */}
             <div className="absolute inset-0">
                 <div className="sm:hidden absolute inset-0">
@@ -149,7 +163,6 @@ export default function RegistrationPage() {
             {/* Content */}
             <div className="relative z-10 flex flex-col items-center py-20 px-4 min-h-screen">
                 <div className="w-full max-w-4xl space-y-12">
-                    {/* Retreat Header */}
                     <RetreatHeader />
 
                     {/* Form Card */}
@@ -165,6 +178,7 @@ export default function RegistrationPage() {
                             Registration Form
                         </h2>
 
+                        {/* Form */}
                         <form
                             onSubmit={handleSubmit}
                             className="grid grid-cols-1 sm:grid-cols-2 gap-8"
@@ -180,7 +194,9 @@ export default function RegistrationPage() {
                                     className={inputClass}
                                     placeholder="Enter your full name"
                                 />
-                                {errors.name && <p className="text-red-600 mt-2">{errors.name}</p>}
+                                {errors.name && (
+                                    <p className="text-red-600 mt-2">{errors.name}</p>
+                                )}
                             </div>
 
                             {/* Gender */}
@@ -196,7 +212,9 @@ export default function RegistrationPage() {
                                     <option value="Male">Male</option>
                                     <option value="Female">Female</option>
                                 </select>
-                                {errors.gender && <p className="text-red-600 mt-2">{errors.gender}</p>}
+                                {errors.gender && (
+                                    <p className="text-red-600 mt-2">{errors.gender}</p>
+                                )}
                             </div>
 
                             {/* DOB */}
@@ -209,7 +227,9 @@ export default function RegistrationPage() {
                                     onChange={handleChange}
                                     className={inputClass}
                                 />
-                                {errors.dob && <p className="text-red-600 mt-2">{errors.dob}</p>}
+                                {errors.dob && (
+                                    <p className="text-red-600 mt-2">{errors.dob}</p>
+                                )}
                             </div>
 
                             {/* WhatsApp Phone */}
@@ -223,13 +243,16 @@ export default function RegistrationPage() {
                                     className={inputClass}
                                     placeholder="Enter WhatsApp number"
                                 />
-                                {errors.phone && <p className="text-red-600 mt-2">{errors.phone}</p>}
+                                {errors.phone && (
+                                    <p className="text-red-600 mt-2">{errors.phone}</p>
+                                )}
                             </div>
 
                             {/* Email */}
                             <div>
                                 <Label required>Email Address</Label>
                                 <input
+                                    suppressHydrationWarning
                                     type="email"
                                     name="email"
                                     value={formData.email}
@@ -237,7 +260,9 @@ export default function RegistrationPage() {
                                     className={inputClass}
                                     placeholder="Enter email address"
                                 />
-                                {errors.email && <p className="text-red-600 mt-2">{errors.email}</p>}
+                                {errors.email && (
+                                    <p className="text-red-600 mt-2">{errors.email}</p>
+                                )}
                             </div>
 
                             {/* Address */}
@@ -263,7 +288,9 @@ export default function RegistrationPage() {
                                     className={inputClass}
                                     placeholder="Enter your parish name"
                                 />
-                                {errors.parish && <p className="text-red-600 mt-2">{errors.parish}</p>}
+                                {errors.parish && (
+                                    <p className="text-red-600 mt-2">{errors.parish}</p>
+                                )}
                             </div>
 
                             {/* Occupation */}
@@ -279,7 +306,9 @@ export default function RegistrationPage() {
                                     <option value="Studying">Studying</option>
                                     <option value="Working">Working</option>
                                 </select>
-                                {errors.occupation && <p className="text-red-600 mt-2">{errors.occupation}</p>}
+                                {errors.occupation && (
+                                    <p className="text-red-600 mt-2">{errors.occupation}</p>
+                                )}
                             </div>
 
                             {/* Payment Mode */}
@@ -313,7 +342,6 @@ export default function RegistrationPage() {
                                     <p className="text-red-600 mb-4">{errors.paymentMode}</p>
                                 )}
 
-
                                 <div className="flex flex-col items-center bg-gray-50 rounded-2xl p-6 border">
                                     <Image
                                         src="/qr-code.png"
@@ -322,7 +350,9 @@ export default function RegistrationPage() {
                                         height={200}
                                         className="rounded-lg"
                                     />
-                                    <p className="mt-4 font-semibold text-gray-800 text-lg">UPI: something17@oksbi  </p>
+                                    <p className="mt-4 font-semibold text-gray-800 text-lg">
+                                        UPI: something17@oksbi
+                                    </p>
                                     <p className="text-gray-600 text-center mt-1">
                                         Scan to pay ₹1000 registration fee
                                     </p>
