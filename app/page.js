@@ -6,10 +6,10 @@ import { motion } from "framer-motion";
 import { Cinzel } from "next/font/google";
 import { useState, useEffect } from "react";
 
-const cinzel = Cinzel({ subsets: ["latin"], weight: "700" }); // royal look
+const cinzel = Cinzel({ subsets: ["latin"], weight: "700" }); 
 
 export default function LandingPage() {
-  const eventDate = new Date("2025-10-24T00:00:00"); // 🎯 Event start date
+  const eventDate = new Date("2025-10-24T00:00:00"); // Event start date
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -148,8 +148,8 @@ export default function LandingPage() {
             transition={{ delay: 1.2, duration: 1 }}
             className="mt-10"
           >
-            <Link href="/registration">
-              <button className="px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-indigo-500 to-cyan-600 text-white text-lg sm:text-xl font-semibold rounded-2xl shadow-lg hover:from-indigo-400 hover:to-cyan-500 hover:shadow-[0_0_25px_rgba(120,200,255,0.9)] transition-all">
+            <Link href="/register">
+              <button onClick={() => { window.localStorage.removeItem("Details") }} className="px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-indigo-500 to-cyan-600 text-white text-lg sm:text-xl font-semibold rounded-2xl shadow-lg hover:from-indigo-400 hover:to-cyan-500 hover:shadow-[0_0_25px_rgba(120,200,255,0.9)] transition-all">
                 Register Now
               </button>
             </Link>

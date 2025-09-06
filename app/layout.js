@@ -1,6 +1,13 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Poppins } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers"; // ✅ import client provider
+
+const poppins = Poppins({
+  variable: "--font-poppins",
+  weight: ["400", "500", "700"],
+  subsets: ["latin"],
+})
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,10 +28,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-      suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
+        className={`${poppins.variable} antialiased`}
       >
-        {/* ✅ Wrap in Providers */}
+        {/*  Wrap in Providers */}
         <Providers>{children}</Providers>
       </body>
     </html>
