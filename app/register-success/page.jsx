@@ -1,8 +1,11 @@
+export const dynamic = "force-dynamic";
+
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useRef } from "react";
+import { useRef, useMemo } from "react";
 import { toPng } from "html-to-image";
+import PrayerCard from "./PrayerCard";
 
 export default function RegisterSuccess() {
   const searchParams = useSearchParams();
@@ -34,77 +37,15 @@ export default function RegisterSuccess() {
     "“Trust in the Lord with all your heart...” — Proverbs 3:5",
   ];
 
-  const randomBlessing = blessings[Math.floor(Math.random() * blessings.length)];
-  const randomVerse = verses[Math.floor(Math.random() * verses.length)];
-
-  const PrayerCard = () => {
-    return (
-      <div
-        ref={cardRef}
-        style={{
-          width: 400,
-          height: 600,
-          background: "linear-gradient(180deg, #89c4ff 0%, #ffffff 100%)",
-          border: "2px solid #ddd",
-          borderRadius: 16,
-          padding: 30,
-          fontFamily: "Arial, sans-serif",
-          color: "#333",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-        }}
-      >
-        {/* Header logos */}
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <img
-            src="/images/JYLogo.png"
-            style={{ height: 48 }}
-            crossOrigin="anonymous"
-          />
-          <img
-            src="/images/Jaago2025Logo.png"
-            style={{ height: 48 }}
-            crossOrigin="anonymous"
-          />
-        </div>
-
-        {/* Main text */}
-        <div>
-          <p style={{ marginTop: 20, fontSize: 14, lineHeight: 1.6 }}>
-            {gender.toLowerCase() === "male"
-              ? `Heavenly Father, I, ${fullName}, come before You today as Your son, seeking Your light to guide my path.`
-              : `Loving Father, I, ${fullName}, come before You as Your daughter, seeking Your gentle light to lead my heart.`}
-          </p>
-
-          <p style={{ marginTop: 14, fontSize: 14, lineHeight: 1.6 }}>
-            {lifeStatus === "Study"
-              ? "Guide me as I grow in wisdom and understanding."
-              : "Strengthen me as I serve faithfully in my work and life responsibilities."}
-          </p>
-
-          <p style={{ marginTop: 20, fontStyle: "italic", color: "#555" }}>
-            "{randomBlessing}"
-          </p>
-          <p style={{ marginTop: 12, fontSize: 12, color: "#444" }}>
-            {randomVerse}
-          </p>
-        </div>
-
-        {/* Footer */}
-        <p
-          style={{
-            marginTop: 20,
-            fontWeight: "bold",
-            color: "#FF6F00",
-            textAlign: "right",
-          }}
-        >
-          Eliora 2025
-        </p>
-      </div>
-    );
-  };
+  // lock blessing/verse so they don’t change on re-render
+  const randomBlessing = useMemo(
+    () => blessings[Math.floor(Math.random() * blessings.length)],
+    []
+  );
+  const randomVerse = useMemo(
+    () => verses[Math.floor(Math.random() * verses.length)],
+    []
+  );
 
   const downloadCard = async () => {
     if (!cardRef.current) return;
@@ -113,7 +54,7 @@ export default function RegisterSuccess() {
       const dataUrl = await toPng(cardRef.current, {
         cacheBust: true,
         backgroundColor: "#ffffff",
-        foreignObjectRendering: true, // important fix
+        foreignObjectRendering: true,
       });
 
       const link = document.createElement("a");
@@ -135,7 +76,14 @@ export default function RegisterSuccess() {
       </p>
 
       {/* Prayer Card */}
-      <PrayerCard />
+      <PrayerCard
+        ref={cardRef}
+        fullName={fullName}
+        gender={gender}
+        lifeStatus={lifeStatus}
+        blessing={randomBlessing}
+        verse={randomVerse}
+      />
 
       <button
         onClick={downloadCard}
