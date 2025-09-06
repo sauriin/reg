@@ -31,7 +31,7 @@ export default function RootLayout({ children }) {
         suppressHydrationWarning
         className={`${poppins.variable} antialiased`}
       >
-        {/* ✅ Wrap in Providers */}
+        {/*  Wrap in Providers */}
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -1,152 +1,132 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useRef } from "react";
 import { toPng } from "html-to-image";
-import jylogo from "./images/JYLogo.png"
-import jaagologo from './images/Jaago2025Logo.png'
-import ladderImage from './images/image.png'
-import { useRouter } from "next/navigation";
 
-export default function PrayerCard() {
+export default function RegisterSuccess() {
+  const searchParams = useSearchParams();
+  const fullName = searchParams.get("fullName");
+  const gender = searchParams.get("gender");
+  const lifeStatus = searchParams.get("lifeStatus");
+
   const cardRef = useRef(null);
-  const [details, setDetails] = useState({ name: "", gender: "", lifeStatus: {} })
-  const [loading, setLoading] = useState(true)
-  const nav = useRouter()
 
-  useEffect(() => {
-    const storedDetails = window.localStorage.getItem("Details");
-    if (storedDetails) {
-      const dets = JSON.parse(storedDetails);
-      setDetails(dets)
-      console.log(dets.name);       // Access name
-      console.log(dets.gender);     // Access gender
-      console.log(dets.lifeStatus); // Access life status
-    }
-    else {
-      nav.push("/")
-    }
-
-    setTimeout(()=>{
-      setLoading(false);
-    }, 500)
-
-  }, [])
-
-  const getPrayerHTML = () => {
-    const prayer =
-      details.gender === "male"
-        ? `
-          <h2 style="font-size: 1.25rem; font-weight: bold; color: #333; margin-bottom: 12px;">
-            Eliora Prayer
-          </h2>
-          <p style="font-size: 0.95rem; color: #444; line-height: 1.6;">
-            Heavenly Father, I, <strong>${details.name}</strong>, come before You today as Your son,
-            seeking Your light to guide my path.
-          </p>
-          <p style="font-size: 0.95rem; color: #444; line-height: 1.6; margin-top: 12px;">
-            Strengthen me to be a man of faith, courage, and integrity.
-            Bless me in my journey ${details.lifeStatus === "Study"
-          ? "as I grow in wisdom and knowledge"
-          : "as I carry the responsibilities of my work"
-        }.
-          </p>
-          <p style="font-size: 0.95rem; color: #444; line-height: 1.6; margin-top: 12px;">
-            Prepare me for the Eliora retreat — to be renewed in Your Spirit and to become a beacon of Your light.
-            Amen.
-          </p>
-        `
-        : `
-          <h2 style="font-size: 1.25rem; font-weight: bold; color: #333; margin-bottom: 12px;">
-            Eliora Prayer
-          </h2>
-          <p style="font-size: 0.95rem; color: #444; line-height: 1.6;">
-            Loving Father, I, <strong>${details.name}</strong>, come before You as Your daughter,
-            seeking Your gentle light to lead my heart.
-          </p>
-          <p style="font-size: 0.95rem; color: #444; line-height: 1.6; margin-top: 12px;">
-            Guide me ${details.lifeStatus === "Study"
-          ? "as I grow in grace and understanding"
-          : "as I serve in my responsibilities at work"
-        }.
-            Help me to nurture those around me and to radiate Your love in all I do.
-          </p>
-          <p style="font-size: 0.95rem; color: #444; line-height: 1.6; margin-top: 12px;">
-            As I prepare for the Eliora retreat, fill me with Your Spirit and renew my heart.
-            Amen.
-          </p>
-        `;
-
-    return `
-        <div style="
-          background: rgb(137, 196, 255);
-          width: 340px;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-          padding: 30px;
-          text-align: center;
-          font-family: 'Arial', sans-serif;
-          position: relative;
-        ">
-          <div style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-          ">
-            <img src="${jylogo.src}" style="height: 48px;" />
-            <img src="${jaagologo.src}" style="height: 48px;" />
-          </div>
-          ${prayer}
-        </div>
-      `;
-  };
-
-  function RegisterSuccessSkeleton() {
+  if (!fullName || !gender) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 animate-pulse px-6">
-            {/* Skeleton for Image */}
-            <div className="w-32 h-32 bg-gray-200 rounded-full mb-6" />
-
-            {/* Skeleton for Heading */}
-            <div className="w-64 h-6 bg-gray-200 rounded mb-4" />
-
-            {/* Skeleton for Subtext */}
-            <div className="w-48 h-4 bg-gray-200 rounded mb-6" />
-
-            {/* Skeleton for Retreat Info */}
-            <div className="w-72 h-16 bg-gray-200 rounded mb-6" />
-
-            {/* Skeleton for Prayer Card */}
-            <div className="w-80 h-96 bg-gray-200 rounded-lg mb-6" />
-
-            {/* Skeleton for Button */}
-            <div className="w-48 h-10 bg-gray-300 rounded-full" />
-        </div>
+      <p className="min-h-screen flex items-center justify-center">
+        Invalid access
+      </p>
     );
-}
+  }
+
+  const blessings = [
+    "May your heart be filled with wonder as you journey through Eliora.",
+    "Blessed are you with courage and faith for the path ahead.",
+    "May you find peace and calm amidst life’s challenges.",
+    "May God's light guide your every step.",
+    "Let your spirit be renewed and strengthened.",
+  ];
+
+  const verses = [
+    "“Your word is a lamp to my feet and a light to my path.” — Psalm 119:105",
+    "“I can do all things through Christ who strengthens me.” — Philippians 4:13",
+    "“Trust in the Lord with all your heart...” — Proverbs 3:5",
+  ];
+
+  const randomBlessing = blessings[Math.floor(Math.random() * blessings.length)];
+  const randomVerse = verses[Math.floor(Math.random() * verses.length)];
+
+  const PrayerCard = () => {
+    return (
+      <div
+        ref={cardRef}
+        style={{
+          width: 400,
+          height: 600,
+          background: "linear-gradient(180deg, #89c4ff 0%, #ffffff 100%)",
+          border: "2px solid #ddd",
+          borderRadius: 16,
+          padding: 30,
+          fontFamily: "Arial, sans-serif",
+          color: "#333",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+        }}
+      >
+        {/* Header logos */}
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <img
+            src="/images/JYLogo.png"
+            style={{ height: 48 }}
+            crossOrigin="anonymous"
+          />
+          <img
+            src="/images/Jaago2025Logo.png"
+            style={{ height: 48 }}
+            crossOrigin="anonymous"
+          />
+        </div>
+
+        {/* Main text */}
+        <div>
+          <p style={{ marginTop: 20, fontSize: 14, lineHeight: 1.6 }}>
+            {gender.toLowerCase() === "male"
+              ? `Heavenly Father, I, ${fullName}, come before You today as Your son, seeking Your light to guide my path.`
+              : `Loving Father, I, ${fullName}, come before You as Your daughter, seeking Your gentle light to lead my heart.`}
+          </p>
+
+          <p style={{ marginTop: 14, fontSize: 14, lineHeight: 1.6 }}>
+            {lifeStatus === "Study"
+              ? "Guide me as I grow in wisdom and understanding."
+              : "Strengthen me as I serve faithfully in my work and life responsibilities."}
+          </p>
+
+          <p style={{ marginTop: 20, fontStyle: "italic", color: "#555" }}>
+            "{randomBlessing}"
+          </p>
+          <p style={{ marginTop: 12, fontSize: 12, color: "#444" }}>
+            {randomVerse}
+          </p>
+        </div>
+
+        {/* Footer */}
+        <p
+          style={{
+            marginTop: 20,
+            fontWeight: "bold",
+            color: "#FF6F00",
+            textAlign: "right",
+          }}
+        >
+          Eliora 2025
+        </p>
+      </div>
+    );
+  };
 
   const downloadCard = async () => {
     if (!cardRef.current) return;
-    const dataUrl = await toPng(cardRef.current, { cacheBust: true });
-    const link = document.createElement("a");
-    link.download = `${details.name}-eliora-prayer.png`;
-    link.href = dataUrl;
-    link.click();
+
+    try {
+      const dataUrl = await toPng(cardRef.current, {
+        cacheBust: true,
+        backgroundColor: "#ffffff",
+        foreignObjectRendering: true, // important fix
+      });
+
+      const link = document.createElement("a");
+      link.download = `${fullName}-eliora-prayer.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      console.error("Error generating card:", error);
+    }
   };
 
-  if(loading){
-    return <RegisterSuccessSkeleton />
-  }
-
   return (
-    <div className="flex flex-col items-center py-10 space-y-6 fade-in-on-load">
-      {/* Success Illustration */}
-      <img
-        src={ladderImage.src} // Replace with actual image path
-        alt="Step towards God"
-        className="h-auto"
-      />
-
-      {/* Success Message */}
+    <div className="min-h-screen flex flex-col items-center justify-center py-10 space-y-6 bg-gray-100">
       <h2 className="text-2xl font-semibold text-gray-800 text-center">
         You have taken one more step towards God!
       </h2>
@@ -154,26 +134,9 @@ export default function PrayerCard() {
         Your registration was successful. Below is your personalized prayer card.
       </p>
 
-      {/* Retreat Info */}
-      <div className="text-center text-gray-700">
-        <p className="text-sm">
-          <strong>Date:</strong> 24–26 October 2025
-        </p>
-        <p className="text-sm">
-          <strong>Place:</strong> Jagruti Animation, Netrang
-        </p>
-        <p className="mt-2 text-base font-medium text-orange-600">
-          See you there!
-        </p>
-      </div>
-
       {/* Prayer Card */}
-      <div
-        ref={cardRef}
-        dangerouslySetInnerHTML={{ __html: getPrayerHTML() }}
-      />
+      <PrayerCard />
 
-      {/* Download Button */}
       <button
         onClick={downloadCard}
         className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
@@ -181,7 +144,5 @@ export default function PrayerCard() {
         Download Prayer Card
       </button>
     </div>
-
-
   );
 }

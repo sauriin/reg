@@ -1,24 +1,33 @@
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
 export const create = mutation({
   args: {
-    name: v.string(),
+    fullName: v.string(),
     gender: v.string(),
-    dob: v.string(),
-    phone: v.string(),
-    email: v.string(),
+    lifeStatus: v.string(),
+    dateOfBirth: v.string(),
+    whatsappNumber: v.string(),
+    emergencyContact: v.string(),
+    emailAddress: v.string(),
     address: v.optional(v.string()),
-    parish: v.string(),
-    occupation: v.string(),
-    paymentMode: v.string(),
-    emergencyName: v.string(),
-    emergencyPhone: v.string(),
+    parishName: v.string(),
+    travelWithUs: v.string(),
+    paymentMethod: v.string(),
   },
   handler: async (ctx, args) => {
-    await ctx.db.insert("registrations", {
+    const result = await ctx.db.insert("registrations", {
       ...args,
       createdAt: Date.now(),
     });
+    return result._id; // return the ID of the newly created registration
+  },
+});
+
+export const getRegistration = query({
+  args: { registrationId: v.string() },
+  handler: async (ctx, { registrationId }) => {
+    const registration = await ctx.db.get(`registrations/${registrationId}`);
+    return registration || null;
   },
 });

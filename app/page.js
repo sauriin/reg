@@ -6,10 +6,10 @@ import { motion } from "framer-motion";
 import { Cinzel } from "next/font/google";
 import { useState, useEffect } from "react";
 
-const cinzel = Cinzel({ subsets: ["latin"], weight: "700" }); // royal look
+const cinzel = Cinzel({ subsets: ["latin"], weight: "700" }); 
 
 export default function LandingPage() {
-  const eventDate = new Date("2025-10-24T00:00:00"); // 🎯 Event start date
+  const eventDate = new Date("2025-10-24T00:00:00"); // Event start date
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,

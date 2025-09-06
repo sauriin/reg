@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import HeaderImage from './images/BannerBlue.png'
-import paymentQR from './images/PaymentQR.jpg'
+import HeaderImage from "./images/BannerBlue.png";
+import paymentQR from "./images/PaymentQR.jpg";
 import { useRouter } from "next/navigation";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 export default function ElioraRegistration() {
     const [paymentMethod, setPaymentMethod] = useState("cash");
@@ -17,51 +19,31 @@ export default function ElioraRegistration() {
         emailAddress: "",
         address: "",
         parishName: "",
-        paymentReceipt: null,
+        travelWithUs: "",
     });
     const [errors, setErrors] = useState({});
-    const [registering, setIsRegistering] = useState(false)
-    const nav = useRouter()
+    const [registering, setIsRegistering] = useState(false);
+    const [submitError, setSubmitError] = useState("");
+    const nav = useRouter();
+
+    const createRegistration = useMutation(api.registration.create);
 
     const validateForm = () => {
         const newErrors = {};
-
         if (!formData.fullName.trim()) newErrors.fullName = "Full Name is required.";
         if (!formData.gender) newErrors.gender = "Please select your gender.";
         if (!formData.lifeStatus) newErrors.lifeStatus = "Please select your current status.";
-
-        if (!formData.dateOfBirth) {
-            newErrors.dateOfBirth = "Date of Birth is required.";
-        } else {
-            const birthDate = new Date(formData.dateOfBirth);
-            const today = new Date();
-
-            let age = today.getFullYear() - birthDate.getFullYear();
-            const monthDiff = today.getMonth() - birthDate.getMonth();
-            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-                age--;
-            }
-
-            if (age < 16 || age > 30) {
-                newErrors.dateOfBirth = "Age must be between 16 and 30 years.";
-            }
-        }
-
+        if (!formData.dateOfBirth) newErrors.dateOfBirth = "Date of Birth is required.";
         const phoneRegex = /^[0-9]{10}$/;
         if (!formData.whatsappNumber || !phoneRegex.test(formData.whatsappNumber))
             newErrors.whatsappNumber = "Enter a valid 10-digit WhatsApp number.";
-
         if (!formData.emergencyContact.trim())
             newErrors.emergencyContact = "Emergency contact is required.";
-
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!formData.emailAddress || !emailRegex.test(formData.emailAddress))
             newErrors.emailAddress = "Enter a valid email address.";
-
         if (!formData.parishName.trim()) newErrors.parishName = "Parish name is required.";
-
-        if (paymentMethod === "online" && !formData.paymentReceipt)
-            newErrors.paymentReceipt = "Please upload your payment receipt.";
+        if (!formData.travelWithUs) newErrors.travelWithUs = "Please select an option.";
 
         return newErrors;
     };
@@ -70,39 +52,48 @@ export default function ElioraRegistration() {
         setFormData((prev) => ({ ...prev, [field]: value }));
     };
 
-    const handleFileChange = (e) => {
-        console.log(e)
-        const file = e.target.files?.[0] || null;
-        setFormData((prev) => ({ ...prev, paymentReceipt: file }));
-    };
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSubmitError("");
+        setIsRegistering(true);
 
-    const handleSubmit = (e) => {
         try {
-            e.preventDefault();
-            setIsRegistering(true)
-
             const validationErrors = validateForm();
             if (Object.keys(validationErrors).length > 0) {
                 setErrors(validationErrors);
+                setIsRegistering(false);
                 return;
             }
-
             setErrors({});
-            window.localStorage.setItem(
-                "Details",
-                JSON.stringify({
-                    name: formData.fullName,
-                    gender: formData.gender,
-                    lifeStatus: formData.lifeStatus
-                })
+
+            // 🔹 Insert into Convex
+            await createRegistration({
+                fullName: formData.fullName,
+                gender: formData.gender,
+                lifeStatus: formData.lifeStatus,
+                dateOfBirth: formData.dateOfBirth,
+                whatsappNumber: formData.whatsappNumber,
+                emergencyContact: formData.emergencyContact,
+                emailAddress: formData.emailAddress,
+                address: formData.address || undefined,
+                parishName: formData.parishName,
+                travelWithUs: formData.travelWithUs,
+                paymentMethod,
+            });
+
+            // 🔹 Redirect to success page with data as query params
+            nav.push(
+                `/register-success?fullName=${encodeURIComponent(
+                    formData.fullName
+                )}&gender=${formData.gender}&lifeStatus=${formData.lifeStatus}`
             );
-            nav.push("/register-success")
-        }
-        finally {
-            setIsRegistering(false)
+        } catch (err) {
+            console.error(err);
+            setSubmitError("Something went wrong while submitting the form.");
+        } finally {
+            setIsRegistering(false);
         }
     };
-
     return (
         <div className="min-h-screen bg-white font-poppins">
             {/* Hero Banner */}
@@ -133,11 +124,18 @@ export default function ElioraRegistration() {
                 <div className="space-y-8 animate-in fade-in duration-800">
                     {/* Event Information */}
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight text-gray-900 mb-6">ELIORA - God is my light!</h1>
+                        <h1 className="text-2xl font-bold tracking-tight text-gray-900 mb-6">
+                            ELIORA - God is my light!
+                        </h1>
                         <div className="text-gray-600 mt-2 text-base leading-relaxed space-y-2">
-                            <p>{'"Your word is a lamp to my feet and light to my path. - Psalm 119:105"'}</p>
                             <p>
-                                Eliora 2025 - An Initial Retreat for the Diocese of Vadodara. Return to where you belong, in God's love!
+                                {
+                                    '"Your word is a lamp to my feet and light to my path. - Psalm 119:105"'
+                                }
+                            </p>
+                            <p>
+                                Eliora 2025 - An Initial Retreat for the Diocese of Vadodara.
+                                Return to where you belong, in God&apos;s love!
                             </p>
                             <div className="space-y-1">
                                 <p>
@@ -153,11 +151,24 @@ export default function ElioraRegistration() {
                                     <strong>Age group:</strong> 16-30 years
                                 </p>
                                 <p>
-                                    <strong>Registration Fee:</strong> ₹1000/- (Includes travel to and fro the venue)
+                                    <strong>Registration Fee:</strong> ₹1000/- (Includes travel to
+                                    and fro the venue)
                                 </p>
                             </div>
                         </div>
 
+                        {/* Transport info (your requested wording/placement) */}
+                        <div className="mt-4 text-gray-600 text-base leading-relaxed">
+                            <p>
+                                Transport facility will be provided for participants from
+                                Vadodara. The bus will depart on{" "}
+                                <strong>23rd October evening</strong>. Participants coming from
+                                outside Vadodara will need to arrange their own travel but must
+                                also reach the venue by <strong>23rd October evening</strong>.
+                            </p>
+                        </div>
+
+                        {/* Coordinators */}
                         <div className="mt-4 text-gray-600">
                             <p>For any concern please reach out to us:</p>
                             <ul className="mt-2 space-y-1">
@@ -195,7 +206,9 @@ export default function ElioraRegistration() {
                                 onChange={(e) => handleInputChange("fullName", e.target.value)}
                                 className="flex h-12 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
-                            {errors.fullName && <p className="text-red-500 text-sm">{errors.fullName}</p>}
+                            {errors.fullName && (
+                                <p className="text-red-500 text-sm">{errors.fullName}</p>
+                            )}
                         </div>
 
                         {/* Gender */}
@@ -216,7 +229,9 @@ export default function ElioraRegistration() {
                                 <option value="Male">Male</option>
                                 <option value="Female">Female</option>
                             </select>
-                            {errors.gender && <p className="text-red-500 text-sm">{errors.gender}</p>}
+                            {errors.gender && (
+                                <p className="text-red-500 text-sm">{errors.gender}</p>
+                            )}
                         </div>
 
                         {/* Life Status */}
@@ -238,7 +253,9 @@ export default function ElioraRegistration() {
                                 <option value="Job">Job</option>
                                 <option value="Other">Other</option>
                             </select>
-                            {errors.lifeStatus && <p className="text-red-500 text-sm">{errors.lifeStatus}</p>}
+                            {errors.lifeStatus && (
+                                <p className="text-red-500 text-sm">{errors.lifeStatus}</p>
+                            )}
                         </div>
 
                         {/* Date of Birth */}
@@ -254,7 +271,9 @@ export default function ElioraRegistration() {
                                 onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
                                 className="flex h-12 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
-                            {errors.dateOfBirth && <p className="text-red-500 text-sm">{errors.dateOfBirth}</p>}
+                            {errors.dateOfBirth && (
+                                <p className="text-red-500 text-sm">{errors.dateOfBirth}</p>
+                            )}
                         </div>
 
                         {/* WhatsApp Number */}
@@ -268,13 +287,17 @@ export default function ElioraRegistration() {
                                 required
                                 placeholder="e.g. 9876543210"
                                 value={formData.whatsappNumber}
-                                onChange={(e) => handleInputChange("whatsappNumber", e.target.value)}
+                                onChange={(e) =>
+                                    handleInputChange("whatsappNumber", e.target.value)
+                                }
                                 className="flex h-12 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
-                            {errors.whatsappNumber && <p className="text-red-500 text-sm">{errors.whatsappNumber}</p>}
+                            {errors.whatsappNumber && (
+                                <p className="text-red-500 text-sm">{errors.whatsappNumber}</p>
+                            )}
                         </div>
 
-                        {/* Emergency Contact */}
+                        {/* Emergency Contact (single field; parsed on submit) */}
                         <div className="space-y-2">
                             <label htmlFor="emergencyContact" className="text-sm font-medium text-gray-900">
                                 Emergency Contact Name and Number<span className="text-red-500 ml-1">*</span>
@@ -285,10 +308,14 @@ export default function ElioraRegistration() {
                                 required
                                 placeholder="e.g. ABCDE, 9876543210"
                                 value={formData.emergencyContact}
-                                onChange={(e) => handleInputChange("emergencyContact", e.target.value)}
+                                onChange={(e) =>
+                                    handleInputChange("emergencyContact", e.target.value)
+                                }
                                 className="flex h-12 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
-                            {errors.emergencyContact && <p className="text-red-500 text-sm">{errors.emergencyContact}</p>}
+                            {errors.emergencyContact && (
+                                <p className="text-red-500 text-sm">{errors.emergencyContact}</p>
+                            )}
                         </div>
 
                         {/* Email Address */}
@@ -302,10 +329,14 @@ export default function ElioraRegistration() {
                                 required
                                 placeholder="Enter your email address"
                                 value={formData.emailAddress}
-                                onChange={(e) => handleInputChange("emailAddress", e.target.value)}
+                                onChange={(e) =>
+                                    handleInputChange("emailAddress", e.target.value)
+                                }
                                 className="flex h-12 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
-                            {errors.emailAddress && <p className="text-red-500 text-sm">{errors.emailAddress}</p>}
+                            {errors.emailAddress && (
+                                <p className="text-red-500 text-sm">{errors.emailAddress}</p>
+                            )}
                         </div>
 
                         {/* Address */}
@@ -337,7 +368,32 @@ export default function ElioraRegistration() {
                                 onChange={(e) => handleInputChange("parishName", e.target.value)}
                                 className="flex h-12 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
-                            {errors.parishName && <p className="text-red-500 text-sm">{errors.parishName}</p>}
+                            {errors.parishName && (
+                                <p className="text-red-500 text-sm">{errors.parishName}</p>
+                            )}
+                        </div>
+
+                        {/* Travel With Us */}
+                        <div className="space-y-2">
+                            <label htmlFor="travelWithUs" className="text-sm font-medium text-gray-900">
+                                Will you travel with us?<span className="text-red-500 ml-1">*</span>
+                            </label>
+                            <select
+                                id="travelWithUs"
+                                required
+                                value={formData.travelWithUs}
+                                onChange={(e) => handleInputChange("travelWithUs", e.target.value)}
+                                className="flex h-12 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            >
+                                <option value="" disabled>
+                                    Select an option
+                                </option>
+                                <option value="Yes">Yes</option>
+                                <option value="No">No</option>
+                            </select>
+                            {errors.travelWithUs && (
+                                <p className="text-red-500 text-sm">{errors.travelWithUs}</p>
+                            )}
                         </div>
 
                         {/* Payment Method */}
@@ -345,7 +401,9 @@ export default function ElioraRegistration() {
                             <label className="text-sm font-medium text-gray-900">
                                 Payment Method<span className="text-red-500 ml-1">*</span>
                             </label>
-                            <p className="text-sm text-gray-600">Please select your preferred payment method.</p>
+                            <p className="text-sm text-gray-600">
+                                Please select your preferred payment method.
+                            </p>
                             <div className="space-y-2">
                                 <div className="flex items-center space-x-2 p-3 rounded-md hover:bg-gray-50 transition-colors">
                                     <input
@@ -357,7 +415,10 @@ export default function ElioraRegistration() {
                                         onChange={(e) => setPaymentMethod(e.target.value)}
                                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                                     />
-                                    <label htmlFor="cash" className="cursor-pointer text-sm font-medium text-gray-900">
+                                    <label
+                                        htmlFor="cash"
+                                        className="cursor-pointer text-sm font-medium text-gray-900"
+                                    >
                                         Cash payment at venue
                                     </label>
                                 </div>
@@ -371,50 +432,42 @@ export default function ElioraRegistration() {
                                         onChange={(e) => setPaymentMethod(e.target.value)}
                                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                                     />
-                                    <label htmlFor="online" className="cursor-pointer text-sm font-medium text-gray-900">
+                                    <label
+                                        htmlFor="online"
+                                        className="cursor-pointer text-sm font-medium text-gray-900"
+                                    >
                                         Online payment (UPI)
                                     </label>
                                 </div>
                             </div>
-                            {errors.paymentReceipt && <p className="text-red-500 text-sm">{errors.paymentReceipt}</p>}
                         </div>
 
-                        {/* Online Payment Details */}
+                        {/* Online Payment QR only */}
                         {paymentMethod === "online" && (
                             <div className="space-y-4 border-l-4 border-blue-500 pl-4 py-2 animate-in slide-in-from-left duration-300">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-900 mb-2">
-                                        Please scan the QR code to pay the registration fee of ₹1000/-.
-                                    </p>
-                                    <img
-                                        src={paymentQR.src}
-                                        alt="UPI QR Code"
-                                        className="rounded-lg max-w-xs mx-auto md:mx-0"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label htmlFor="receipt" className="text-sm font-medium text-gray-900">
-                                        Upload Payment Receipt<span className="text-red-500 ml-1">*</span>
-                                    </label>
-                                    <p className="text-sm text-gray-600">Upload a screenshot of your payment confirmation.</p>
-                                    <input
-                                        type="file"
-                                        id="receipt"
-                                        accept="image/*"
-                                        required={paymentMethod === "online"}
-                                        onChange={handleFileChange}
-                                        className="flex w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    />
-                                </div>
+                                <p className="text-sm font-medium text-gray-900 mb-2">
+                                    Please scan the QR code to pay the registration fee of ₹1000/-.
+                                </p>
+                                <img
+                                    src={paymentQR.src}
+                                    alt="UPI QR Code"
+                                    className="rounded-lg max-w-xs mx-auto md:mx-0"
+                                />
                             </div>
+                        )}
+
+                        {submitError && (
+                            <div className="text-red-600 text-sm">{submitError}</div>
                         )}
 
                         <div className="flex justify-end pt-6">
                             <button
                                 type="submit"
                                 disabled={registering}
-                                className={`inline-flex items-center justify-center h-12 px-8 rounded-full text-base font-medium text-white transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2
-                                    ${registering ? "bg-orange-400 cursor-not-allowed" : "bg-orange-500 hover:bg-orange-600"}`}
+                                className={`inline-flex items-center justify-center h-12 px-8 rounded-full text-base font-medium text-white transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ${registering
+                                    ? "bg-orange-400 cursor-not-allowed"
+                                    : "bg-orange-500 hover:bg-orange-600"
+                                    }`}
                             >
                                 {registering ? (
                                     <>
@@ -443,7 +496,12 @@ export default function ElioraRegistration() {
                                 ) : (
                                     <>
                                         Register for Eliora!
-                                        <svg className="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg
+                                            className="ml-2 h-5 w-5"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
                                             <path
                                                 strokeLinecap="round"
                                                 strokeLinejoin="round"
@@ -454,7 +512,6 @@ export default function ElioraRegistration() {
                                     </>
                                 )}
                             </button>
-
                         </div>
                     </form>
                 </div>
